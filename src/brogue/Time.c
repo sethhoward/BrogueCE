@@ -2579,6 +2579,13 @@ void playerTurnEnded() {
 
     } while (player.status[STATUS_PARALYZED]);
 
+    // Accrue passive polarity insight on rested turns. Counted here, not at the command dispatch:
+    // autoRest re-records each rested turn as REST_KEY, so this is the one chokepoint that tallies
+    // identically live and on replay.
+    if (rogue.justRested) {
+        gainPolarityInsightFromRest();
+    }
+
     rogue.justRested = false;
     rogue.justSearched = false;
     updateFlavorText();
