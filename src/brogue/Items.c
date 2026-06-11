@@ -7241,7 +7241,7 @@ static void detectMagicOnItem(item *theItem) {
 // trivializing the late game. On reaching the threshold it reveals the polarity of the first still-unknown
 // (good/bad) item in the pack. Pure flag-flipping via detectMagicOnItem — no RNG — so the counter and the
 // reveal are reconstructed identically on replay.
-#define POLARITY_INSIGHT_BASE_TURNS       120
+#define POLARITY_INSIGHT_BASE_TURNS       90
 #define POLARITY_INSIGHT_TURNS_PER_KIND   30
 
 static int knownPolarityKindCount(void) {
