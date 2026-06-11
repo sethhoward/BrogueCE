@@ -620,13 +620,14 @@ const blueprint blueprintCatalog_Brogue[] = {
         {DF_ASH,    0,          0,              {2, 3},     0,          0,          -1,         0,              0,              0,          0,          0}}},
     // Altars of insight -- force-built at depths 5/15/25 (see addMachines); occupies the variant-specific
     // reward slot (index 72 = MT_INSIGHT_ALTAR). Force-only: no BP_REWARD, freq 0, so it never enters the
-    // random reward raffle.
+    // random reward raffle. The blueprint builds ONLY the carpeted room (kept small so it fits easily);
+    // the two altars are then placed in addMachines in a fixed "s . o" arrangement (payment west, one-tile
+    // gap, insight east), because the generic machine builder scatters features at random interior cells
+    // and can't guarantee an ordered, adjacent pair.
     {"Altars of insight -- sacrifice an offering to reveal the nature of another item",
-    {5, AMULET_LEVEL},{7, 30},     0,      5,          0,                  (BP_ROOM | BP_PURGE_INTERIOR | BP_SURROUND_WITH_WALLS | BP_OPEN_INTERIOR), {
+    {5, AMULET_LEVEL},{7, 14},     0,      3,          0,                  (BP_ROOM | BP_PURGE_INTERIOR | BP_SURROUND_WITH_WALLS | BP_OPEN_INTERIOR), {
         {0,         CARPET,     DUNGEON,        {0,0},      0,          0,          -1,         0,              0,              0,          0,          (MF_EVERYWHERE)},
         {0,         STATUE_INERT,DUNGEON,       {1,3},      0,          0,          -1,         0,              2,              0,          0,          (MF_TREAT_AS_BLOCKING | MF_BUILD_IN_WALLS)},
-        {0,         INSIGHT_ALTAR_INSIGHT,DUNGEON,{1,1},    1,          0,          -1,         0,              2,              0,          0,          (MF_TREAT_AS_BLOCKING)},
-        {0,         INSIGHT_ALTAR_PAYMENT,DUNGEON,{1,1},    1,          0,          -1,         0,              2,              0,          0,          (MF_TREAT_AS_BLOCKING)},
         {0,         0,          0,              {1,1},      1,          0,          0,          0,              2,              0,          0,          (MF_BUILD_AT_ORIGIN | MF_PERMIT_BLOCKING | MF_BUILD_VESTIBULE)}}},
 };
 
