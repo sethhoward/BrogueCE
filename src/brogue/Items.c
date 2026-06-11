@@ -4696,15 +4696,28 @@ static boolean updateBolt(bolt *theBolt, creature *caster, short x, short y,
     // cloud (gentle). Item teardown mirrors burnItem().
     if (theBolt->flags & (BF_FIERY | BF_ELECTRIC)) {
         item *floorPotion = itemAtLoc((pos){ x, y });
-        if (floorPotion && (floorPotion->category & POTION) && shatterPotionAtLoc(floorPotion, x, y)) {
-            removeItemFromChain(floorPotion, floorItems);
-            deleteItem(floorPotion);
-            pmap[x][y].flags &= ~(HAS_ITEM | ITEM_DETECTED);
-            if (lightingChanged) {
-                *lightingChanged = true;
-            }
-            if (autoID) {
-                *autoID = true;
+        if (floorPotion && (floorPotion->category & POTION)) {
+            if (shatterPotionAtLoc(floorPotion, x, y)) {
+                removeItemFromChain(floorPotion, floorItems);
+                deleteItem(floorPotion);
+                pmap[x][y].flags &= ~(HAS_ITEM | ITEM_DETECTED);
+                if (lightingChanged) {
+                    *lightingChanged = true;
+                }
+                if (autoID) {
+                    *autoID = true;
+                }
+                // The detonation absorbs the bolt: it halts here rather than piercing onward (lightning
+                // normally passes through everything via BF_PASSES_THRU_CREATURES), so a single bolt
+                // detonates at most one potion. We only flag termination; the function still falls through
+                // to exposeTileToFire/exposeTileToElectricity below first, so a fire bolt ignites the
+                // freshly-spawned terrain before the bolt stops.
+                terminateBolt = true;
+            } else if (playerCanSee(x, y) && floorPotion->kind < gameConst->numberGoodPotionKinds) {
+                // The benevolent potions have no shatter signature, so the bolt passes through the flask
+                // harmlessly. Give that inert reaction a line of feedback instead of a silent no-op (gated
+                // on visibility so an off-screen monster bolt doesn't print a phantom message).
+                message("the bolt passes through the flask and its fluid glows warmly.", 0);
             }
         }
     }
