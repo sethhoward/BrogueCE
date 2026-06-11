@@ -673,6 +673,11 @@ enum tileType {
     MUD_WALL,
     MUD_DOORWAY,
 
+    // altars of insight (sacrifice one item to reveal another)
+    INSIGHT_ALTAR_INSIGHT,
+    INSIGHT_ALTAR_PAYMENT,
+    INSIGHT_ALTAR_INERT,
+
     NUMBER_TILETYPES,
 };
 
@@ -1778,6 +1783,9 @@ enum dungeonFeatureTypes {
     DF_STENCH_BURN,
     DF_STENCH_SMOLDER,
 
+    // an insight altar promotes to its inert form after a sacrifice
+    DF_ALTAR_INSIGHT_INERT,
+
     NUMBER_DUNGEON_FEATURES,
 };
 
@@ -1983,6 +1991,7 @@ enum terrainMechanicalFlagCatalog {
     TM_INTERRUPT_EXPLORATION_WHEN_SEEN = Fl(23),    // will generate a message when discovered during exploration to interrupt exploration
     TM_INVERT_WHEN_HIGHLIGHTED      = Fl(24),       // will flip fore and back colors when highlighted with pathing
     TM_SWAP_ENCHANTS_ACTIVATION     = Fl(25),       // in machine, swap item enchantments when two suitable items are on this terrain, and activate the machine when that happens
+    TM_INSIGHT_ACTIVATION           = Fl(26),       // in machine, when the insight + offering altars both hold items, reveal the insight item and consume the offering, then activate
 
     TM_PROMOTES_ON_STEP             = (TM_PROMOTES_ON_CREATURE | TM_PROMOTES_ON_ITEM),
 };
@@ -2748,7 +2757,11 @@ enum machineTypes {
     MT_SENTINEL_AREA,
 
     // Variant-specific machines
-    MT_REWARD_HEAVY_OR_RUNIC_WEAPON
+    MT_REWARD_HEAVY_OR_RUNIC_WEAPON,
+    // Brogue fills this variant-specific reward slot with the altars of insight (force-built at fixed
+    // depths in addMachines; never collides with the BulletBrogue weapon vault, which occupies the same
+    // index only in BulletBrogue's catalog).
+    MT_INSIGHT_ALTAR = MT_REWARD_HEAVY_OR_RUNIC_WEAPON
 };
 
 typedef struct autoGenerator {
