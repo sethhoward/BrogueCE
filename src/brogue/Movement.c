@@ -469,6 +469,15 @@ short randValidDirectionFrom(creature *monst, short x, short y, boolean respectA
         if (coordinatesAreInMap(newX, newY)
             && !cellHasTerrainFlag((pos){ newX, newY }, T_OBSTRUCTS_PASSABILITY)
             && !diagonalBlocked(x, y, newX, newY, false)
+            // #841: sacred ground (scroll of sanctuary glyphs) is a hard ward, not just an avoidance
+            // preference. A confused monster stumbles with respectAvoidancePreferences == false, which
+            // would otherwise let it wander onto a glyph it could never willingly cross. Apply the
+            // avoidance/attack check to sacred tiles regardless, but still permit stepping onto the
+            // glyph to attack a player standing on it. (The player is sacred-immune, so monsterAvoids
+            // returns false for them here and the confused player is never restricted.)
+            && (!cellHasTerrainFlag((pos){ newX, newY }, T_SACRED)
+                || (!monsterAvoids(monst, (pos){newX, newY}))
+                || ((pmap[newX][newY].flags & HAS_PLAYER) && monst->creatureState != MONSTER_ALLY))
             && (!respectAvoidancePreferences
                 || (!monsterAvoids(monst, (pos){newX, newY}))
                 || ((pmap[newX][newY].flags & HAS_PLAYER) && monst->creatureState != MONSTER_ALLY))) {
