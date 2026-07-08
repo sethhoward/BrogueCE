@@ -302,7 +302,12 @@ void applyInstantTileEffectsToCreature(creature *monst) {
         && !(monst->bookkeepingFlags & MB_SUBMERGED)) {
         damage = rand_range(15, 20);
         damage = max(damage, monst->info.maxHP / 2);
-        monst->status[STATUS_EXPLOSION_IMMUNITY] = 5;
+        // #816: grant 6, not 5. The status is decremented once per turn and explosive damage only
+        // fires while it is 0, so a value of N yields N-1 immune turns; 5 protected only 4,
+        // contradicting the intended "not again for five turns". 6 gives the five clear turns.
+        // (Paired with the decrement relocation in playerTurnEnded, so the per-turn decrement runs
+        // ahead of both explosion checks rather than between them, where it would steal a turn back.)
+        monst->status[STATUS_EXPLOSION_IMMUNITY] = 6;
         if (monst == &player) {
             rogue.disturbed = true;
             for (layer = 0; layer < NUMBER_TERRAIN_LAYERS && !(tileCatalog[pmap[*x][*y].layers[layer]].flags & T_CAUSES_EXPLOSIVE_DAMAGE); layer++);
@@ -2045,9 +2050,9 @@ static void decrementPlayerStatus() {
         player.status[STATUS_STUCK] = 0;
     }
 
-    if (player.status[STATUS_EXPLOSION_IMMUNITY]) {
-        player.status[STATUS_EXPLOSION_IMMUNITY]--;
-    }
+    // #816: STATUS_EXPLOSION_IMMUNITY is decremented in playerTurnEnded before updateEnvironment(),
+    // not here (which runs after it), so the single per-turn decrement precedes both explosion
+    // checks instead of landing between them and zeroing a fresh grant one turn early.
 
     if (player.status[STATUS_DISCORDANT]) {
         player.status[STATUS_DISCORDANT]--;
@@ -2416,6 +2421,14 @@ void playerTurnEnded() {
                     }
                 }
 
+                // #816: decrement explosion immunity before updateEnvironment(), which is where a
+                // spreading explosion can hit the player (spawnDungeonFeature -> applyInstantTileEffects).
+                // Running the single per-turn decrement ahead of both explosion checks (here and the
+                // applyInstantTileEffectsToCreature below) keeps it from zeroing a fresh grant one turn
+                // early, and matches monsters (decrementMonsterStatus runs before updateEnvironment).
+                if (player.status[STATUS_EXPLOSION_IMMUNITY]) {
+                    player.status[STATUS_EXPLOSION_IMMUNITY]--;
+                }
                 updateEnvironment(); // Update fire and gas, items floating around in water, monsters falling into chasms, etc.
                 decrementPlayerStatus();
                 applyInstantTileEffectsToCreature(&player);
