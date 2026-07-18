@@ -309,6 +309,13 @@ void applyInstantTileEffectsToCreature(creature *monst) {
         // ahead of both explosion checks rather than between them, where it would steal a turn back.)
         monst->status[STATUS_EXPLOSION_IMMUNITY] = 6;
         if (monst == &player) {
+            // #816: mark that immunity was granted this turn so the per-turn decrement in playerTurnEnded
+            // skips itself once. Without this, a grant applied earlier in the same turn than that decrement
+            // -- an explosive bloat detonating on you in melee, applied during your own action before
+            // playerTurnEnded runs -- is zeroed one turn early, giving only four clear turns instead of
+            // five. (Monsters need no such flag: they grant and decrement in one env tick, grant-then-
+            // decrement, so a value of 6 already yields five clear turns.) Cleared once per turn below.
+            rogue.explosionImmunityFresh = true;
             rogue.disturbed = true;
             for (layer = 0; layer < NUMBER_TERRAIN_LAYERS && !(tileCatalog[pmap[*x][*y].layers[layer]].flags & T_CAUSES_EXPLOSIVE_DAMAGE); layer++);
             message(tileCatalog[pmap[*x][*y].layers[layer]].flavorText, 0);
@@ -2426,7 +2433,11 @@ void playerTurnEnded() {
                 // Running the single per-turn decrement ahead of both explosion checks (here and the
                 // applyInstantTileEffectsToCreature below) keeps it from zeroing a fresh grant one turn
                 // early, and matches monsters (decrementMonsterStatus runs before updateEnvironment).
-                if (player.status[STATUS_EXPLOSION_IMMUNITY]) {
+                // The explosionImmunityFresh guard additionally skips this decrement on the turn immunity
+                // was granted, so a grant applied before this point in the turn -- a bloat detonating in
+                // melee, applied during the player's own action -- also keeps the full five turns. The flag
+                // is cleared once per turn below, after the turn-advance loop.
+                if (player.status[STATUS_EXPLOSION_IMMUNITY] && !rogue.explosionImmunityFresh) {
                     player.status[STATUS_EXPLOSION_IMMUNITY]--;
                 }
                 updateEnvironment(); // Update fire and gas, items floating around in water, monsters falling into chasms, etc.
@@ -2483,6 +2494,13 @@ void playerTurnEnded() {
                 return;
             }
         }
+
+        // #816: the grant turn is over; clear the marker so the next turn's decrement counts again.
+        // Cleared here (once per turn, after the turn-advance loop) rather than at the decrement: a grant
+        // that lands after the decrement (gas igniting in updateEnvironment) must not be re-protected next
+        // turn, while a grant before it (a bloat in melee) must be protected exactly once.
+        rogue.explosionImmunityFresh = false;
+
         // DEBUG displayLevel();
         //checkForDungeonErrors();
 
